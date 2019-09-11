@@ -130,3 +130,56 @@ http://example.com/high.m3u8
 def test_variant_playlist_with_multiple_media():
     variant_m3u8 = m3u8.loads(playlists.MULTI_MEDIA_PLAYLIST)
     assert variant_m3u8.dumps() == playlists.MULTI_MEDIA_PLAYLIST
+
+def test_variant_playlist_with_cc_subs_and_audio():
+    variant_m3u8 = m3u8.loads(playlists.VARIANT_PLAYLIST_WITH_CC_SUBS_AND_AUDIO)
+    assert variant_m3u8.dumps() == playlists.VARIANT_PLAYLIST_WITH_CC_SUBS_AND_AUDIO
+    variant_m3u8 = m3u8.loads(playlists.VARIANT_PLAYLIST_WITH_VIDEO_CC_SUBS_AND_AUDIO)
+    assert variant_m3u8.dumps() == playlists.VARIANT_PLAYLIST_WITH_VIDEO_CC_SUBS_AND_AUDIO
+
+def test_all_playlists():
+    # Usage: To view the diff on any of these just comment it from
+    # the known_failures list and run the tests.
+    known_failures = [
+        # Definitely OK
+        "SIMPLE_PLAYLIST_MESSY",  # Expected!
+        "SIMPLE_PLAYLIST_COMMALESS_EXTINF",  # Expected!
+        "CUE_OUT_INVALID_PLAYLIST",  # Expected!
+        "VARIANT_PLAYLIST_WITH_BANDWIDTH_FLOAT",  # Expected? to not reproduce float
+        # Maybe OK?
+        "PLAYLIST_WITH_MULTIPLE_KEYS_UNENCRYPTED_AND_ENCRYPTED_NONE",  # URI="" is not preserved, does it matter?
+        "PLAYLIST_WITH_PROGRAM_DATE_TIME_WITHOUT_DISCONTINUITY",  # Datetime formattings is just different
+        "SIMPLE_PLAYLIST_WITH_CUSTOM_TAGS",  # Expected? Tags are not preserved
+        # Definitely broken:
+        "VARIANT_PLAYLIST_WITH_CC_SUBS_AND_AUDIO",  # broken
+        "VARIANT_PLAYLIST_WITH_VIDEO_CC_SUBS_AND_AUDIO",  # broken
+        "VARIANT_PLAYLIST_WITH_ALT_IFRAME_PLAYLISTS_LAYOUT",  # broken, EXT-X-I-FRAME-STREAM-INF is not preserved
+        "CUE_OUT_PLAYLIST",  # Datetime formatting, EXT-OATCLS-SCTE35 and CUE-IN not preserved
+        "CUE_OUT_ELEMENTAL_PLAYLIST",  # EXT-X-CUE-OUT-CONT properties are not preserved
+        "CUE_OUT_ENVIVIO_PLAYLIST",  # Not even close
+        "MEDIA_WITHOUT_URI_PLAYLIST",  # Channels is not preserved
+        "LOW_LATENCY_DELTA_UPDATE_PLAYLIST",  # Lots wrong here
+    ]
+    all_playlists = {
+        pn: p
+        for pn, p in playlists.__dict__.items()
+        if isinstance(p, str) and p.strip().startswith("#EXTM3U")
+    }
+    for pn, p in all_playlists.items():
+        variant_m3u8 = m3u8.loads(p)
+        generated = variant_m3u8.dumps().strip()
+        original = p.strip()
+        if pn in known_failures:
+            print(pn + ": SKIP")
+            continue
+        if generated != original:
+            print("-" * 80)
+            print("Original:")
+            print(original)
+            print("Generated:")
+            print(generated)
+            print(pn + ": FAIL")
+            print("-" * 80)
+        else:
+            print(pn + ": PASS")
+        assert generated == original
