@@ -7,3 +7,4 @@ pytest
 # defined by the python-coveralls package for coverage==4.0.3
 pytest-cov>=2.4.0,<2.6
 python-coveralls
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
